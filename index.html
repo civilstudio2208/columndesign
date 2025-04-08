@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Column Design Calculator (IS Code)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
             --primary: #2c3e50;
@@ -106,39 +108,43 @@
             font-weight: 700;
         }
         
-        .code-section {
+        .visualization-container {
             margin-top: 30px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
         }
         
         .visualization {
-            margin-top: 30px;
             text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .visualization-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: var(--primary);
         }
         
         .column-diagram {
-            width: 300px;
-            height: 300px;
-            border: 2px solid var(--dark);
-            display: inline-block;
+            border: 1px solid #999;
+            background-color: #fff;
             position: relative;
-            background-color: #f0f0f0;
-            margin: 0 auto;
         }
         
         .reinforcement {
             position: absolute;
-            width: 16px;
-            height: 16px;
             border-radius: 50%;
             background-color: var(--accent);
             transform: translate(-50%, -50%);
-            border: 2px solid #fff;
+            border: 1px solid #fff;
         }
         
-        .ties {
+        .link {
             position: absolute;
-            border: 2px solid var(--secondary);
-            border-radius: 3px;
+            border: 1px solid var(--secondary);
+            border-radius: 50%;
         }
         
         .cover {
@@ -146,10 +152,140 @@
             border: 1px dashed #999;
         }
         
+        .dimension {
+            position: absolute;
+            height: 0;
+            border-top: 1px solid #666;
+        }
+        
+        .dimension-label {
+            position: absolute;
+            font-size: 10px;
+            color: #666;
+            background: white;
+            padding: 0 3px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            background-color: var(--secondary);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.3s;
+        }
+        
+        .btn:hover {
+            background-color: #2980b9;
+        }
+        
+        .btn-pdf {
+            background-color: var(--accent);
+        }
+        
+        .btn-pdf:hover {
+            background-color: #c0392b;
+        }
+        
         @media (max-width: 768px) {
             .design-section {
                 flex-direction: column;
             }
+        }
+        
+        /* Print-specific styles */
+        @media print {
+            body {
+                background: none;
+                padding: 0;
+            }
+            
+            .container {
+                box-shadow: none;
+                padding: 0;
+                max-width: 100%;
+            }
+            
+            .input-section, .action-buttons {
+                display: none;
+            }
+            
+            .output-section {
+                width: 100%;
+            }
+            
+            .visualization-container {
+                page-break-inside: avoid;
+            }
+        }
+        
+        /* PDF template styles */
+        .pdf-template {
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .pdf-header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+        }
+        
+        .pdf-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .pdf-subtitle {
+            font-size: 16px;
+            color: #666;
+        }
+        
+        .pdf-section {
+            margin-bottom: 20px;
+            page-break-inside: avoid;
+        }
+        
+        .pdf-section-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+        }
+        
+        .pdf-result-item {
+            margin-bottom: 10px;
+        }
+        
+        .pdf-result-title {
+            font-weight: bold;
+        }
+        
+        .pdf-visualization {
+            text-align: center;
+            margin: 15px 0;
+        }
+        
+        .pdf-footer {
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            margin-top: 30px;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
         }
     </style>
 </head>
@@ -228,7 +364,7 @@
                         <div class="result-value" id="reinforcement">-</div>
                     </div>
                     <div class="result-item">
-                        <div class="result-title">Tie Details (IS 13920)</div>
+                        <div class="result-title">Tie Details</div>
                         <div class="result-value" id="tieDetails">-</div>
                     </div>
                     <div class="result-item">
@@ -237,11 +373,21 @@
                     </div>
                 </div>
                 
-                <div class="visualization">
-                    <h3>Column Cross-Section (40mm cover as per IS 456)</h3>
-                    <div class="column-diagram" id="columnDiagram">
-                        <!-- Reinforcement bars and ties will be added here dynamically -->
+                <div class="visualization-container">
+                    <div class="visualization">
+                        <div class="visualization-title">Plan View (1:20 scale)</div>
+                        <div id="planView" class="column-diagram" style="width: 200px; height: 200px;"></div>
                     </div>
+                    
+                    <div class="visualization">
+                        <div class="visualization-title">Elevation View (1:20 scale)</div>
+                        <div id="elevationView" class="column-diagram" style="width: 200px; height: 300px;"></div>
+                    </div>
+                </div>
+                
+                <div class="action-buttons">
+                    <button class="btn" onclick="window.print()">Print Design</button>
+                    <button class="btn btn-pdf" id="exportPdf">Export to PDF</button>
                 </div>
             </div>
         </div>
@@ -254,6 +400,9 @@
         const MAX_BAR_DIA = 32; // mm maximum bar diameter
         const MIN_BARS = 4; // Minimum number of bars as per IS 456
         
+        // Initialize jsPDF
+        const { jsPDF } = window.jspdf;
+        
         // Get all input elements
         const inputs = document.querySelectorAll('input, select');
         
@@ -261,6 +410,9 @@
         inputs.forEach(input => {
             input.addEventListener('input', calculateDesign);
         });
+        
+        // Add click event for PDF export
+        document.getElementById('exportPdf').addEventListener('click', exportToPDF);
         
         // Initial calculation
         calculateDesign();
@@ -284,7 +436,12 @@
             }
             
             // Calculate column design
-            designAsPerISCode(width, depth, axialLoad, momentX, momentY, fck, fy, isDuctile);
+            const designResults = designAsPerISCode(width, depth, axialLoad, momentX, momentY, fck, fy, isDuctile);
+            
+            // Update visualizations
+            updatePlanView(width, depth, designResults.numBars, designResults.barDia, designResults.isDuctile);
+            updateElevationView(width, depth, designResults.numBars, designResults.barDia, 
+                              designResults.tieDia, designResults.tieSpacing, designResults.isDuctile);
         }
         
         function designAsPerISCode(width, depth, Pu, Mux, Muy, fck, fy, isDuctile) {
@@ -407,28 +564,134 @@
             document.getElementById('interactionRatio').textContent = 
                 interactionRatio.toFixed(3) + (interactionRatio > 1.0 ? " (Overstressed)" : "");
             
-            // Update visualization with proper detailing
-            updateVisualization(width, depth, numBars, barDia, tieDia, tieSpacing, isDuctile);
+            return {
+                width,
+                depth,
+                numBars,
+                barDia,
+                tieDia,
+                tieSpacing,
+                isDuctile,
+                requiredAst,
+                actualAst,
+                interactionRatio,
+                status
+            };
         }
         
-        function updateVisualization(width, depth, numBars, barDia, tieDia, tieSpacing, isDuctile) {
-            const diagram = document.getElementById('columnDiagram');
-            diagram.style.width = `${width}px`;
-            diagram.style.height = `${depth}px`;
-            
-            // Clear existing elements
+        function updatePlanView(width, depth, numBars, barDia, isDuctile) {
+            const diagram = document.getElementById('planView');
             diagram.innerHTML = '';
+            
+            // Set diagram size (1:20 scale)
+            const scale = 1/20;
+            const diagramWidth = width * scale;
+            const diagramHeight = depth * scale;
+            diagram.style.width = `${diagramWidth}px`;
+            diagram.style.height = `${diagramHeight}px`;
             
             // Add cover indication
             const cover = document.createElement('div');
             cover.className = 'cover';
-            cover.style.width = `${width - 2*COVER}px`;
-            cover.style.height = `${depth - 2*COVER}px`;
-            cover.style.left = `${COVER}px`;
-            cover.style.top = `${COVER}px`;
+            cover.style.width = `${(width - 2*COVER) * scale}px`;
+            cover.style.height = `${(depth - 2*COVER) * scale}px`;
+            cover.style.left = `${COVER * scale}px`;
+            cover.style.top = `${COVER * scale}px`;
             diagram.appendChild(cover);
             
-            // Calculate bar positions (as per IS 13920 for ductile detailing)
+            // Calculate bar positions (equally distributed)
+            const effectiveWidth = width - 2 * COVER;
+            const effectiveDepth = depth - 2 * COVER;
+            
+            // For plan view, we'll show bars with links at corners
+            const barPositions = calculateBarPositions(width, depth, numBars);
+            
+            // Add reinforcement bars
+            barPositions.forEach(pos => {
+                const bar = document.createElement('div');
+                bar.className = 'reinforcement';
+                bar.style.width = `${barDia * scale}px`;
+                bar.style.height = `${barDia * scale}px`;
+                bar.style.left = `${pos.x * scale}px`;
+                bar.style.top = `${pos.y * scale}px`;
+                diagram.appendChild(bar);
+            });
+            
+            // Add links at corners (curved)
+            if (numBars >= 4) {
+                const cornerRadius = 10 * scale;
+                const linkSize = 20 * scale;
+                
+                // Top-left corner
+                addCornerLink(diagram, COVER * scale, COVER * scale, cornerRadius, linkSize, 'top-left');
+                // Top-right corner
+                addCornerLink(diagram, (width - COVER) * scale, COVER * scale, cornerRadius, linkSize, 'top-right');
+                // Bottom-right corner
+                addCornerLink(diagram, (width - COVER) * scale, (depth - COVER) * scale, cornerRadius, linkSize, 'bottom-right');
+                // Bottom-left corner
+                addCornerLink(diagram, COVER * scale, (depth - COVER) * scale, cornerRadius, linkSize, 'bottom-left');
+            }
+            
+            // Add dimensions
+            addDimension(diagram, 0, 0, width * scale, 0, `${width}mm`, 'top');
+            addDimension(diagram, 0, 0, 0, depth * scale, `${depth}mm`, 'left');
+        }
+        
+        function updateElevationView(width, depth, numBars, barDia, tieDia, tieSpacing, isDuctile) {
+            const diagram = document.getElementById('elevationView');
+            diagram.innerHTML = '';
+            
+            // Set diagram size (1:20 scale)
+            const scale = 1/20;
+            const diagramWidth = width * scale;
+            const diagramHeight = 300; // Fixed height for elevation
+            diagram.style.width = `${diagramWidth}px`;
+            diagram.style.height = `${diagramHeight}px`;
+            
+            // Add cover indication
+            const cover = document.createElement('div');
+            cover.className = 'cover';
+            cover.style.width = `${(width - 2*COVER) * scale}px`;
+            cover.style.height = `${diagramHeight - 2*COVER*scale}px`;
+            cover.style.left = `${COVER * scale}px`;
+            cover.style.top = `${COVER * scale}px`;
+            diagram.appendChild(cover);
+            
+            // Add bars (vertical lines)
+            const barPositions = calculateBarPositions(width, depth, numBars);
+            barPositions.forEach(pos => {
+                // Only show bars on the near face for elevation
+                if (pos.y === COVER || pos.y === depth - COVER) {
+                    const bar = document.createElement('div');
+                    bar.className = 'reinforcement';
+                    bar.style.width = `${barDia * scale}px`;
+                    bar.style.height = `${(diagramHeight - 2*COVER*scale)}px`;
+                    bar.style.left = `${pos.x * scale - barDia*scale/2}px`;
+                    bar.style.top = `${COVER * scale}px`;
+                    diagram.appendChild(bar);
+                }
+            });
+            
+            // Add ties (horizontal lines)
+            const tieCount = Math.floor(diagramHeight / (tieSpacing * scale));
+            for (let i = 0; i < tieCount; i++) {
+                const tie = document.createElement('div');
+                tie.className = 'link';
+                tie.style.width = `${(width - 2*COVER) * scale}px`;
+                tie.style.height = `${tieDia * scale}px`;
+                tie.style.left = `${COVER * scale}px`;
+                tie.style.top = `${COVER * scale + i * tieSpacing * scale}px`;
+                tie.style.borderWidth = isDuctile ? '2px' : '1px';
+                diagram.appendChild(tie);
+            }
+            
+            // Add dimensions
+            addDimension(diagram, 0, 0, width * scale, 0, `${width}mm`, 'top');
+            addDimension(diagram, 0, 0, 0, diagramHeight, `Column Height`, 'left');
+            addDimension(diagram, 0, diagramHeight/2, COVER * scale, diagramHeight/2, `Cover ${COVER}mm`, 'top');
+        }
+        
+        function calculateBarPositions(width, depth, numBars) {
             const effectiveWidth = width - 2 * COVER;
             const effectiveDepth = depth - 2 * COVER;
             
@@ -473,73 +736,157 @@
             }
             
             // Limit to actual number of bars needed
-            const finalBarPositions = barPositions.slice(0, numBars);
+            return barPositions.slice(0, numBars);
+        }
+        
+        function addCornerLink(container, x, y, radius, size, position) {
+            const link = document.createElement('div');
+            link.className = 'link';
+            link.style.width = `${size}px`;
+            link.style.height = `${size}px`;
+            link.style.borderRadius = '50%';
             
-            // Add reinforcement bars
-            finalBarPositions.forEach(pos => {
-                const bar = document.createElement('div');
-                bar.className = 'reinforcement';
-                bar.style.width = `${barDia}px`;
-                bar.style.height = `${barDia}px`;
-                bar.style.left = `${pos.x}px`;
-                bar.style.top = `${pos.y}px`;
-                diagram.appendChild(bar);
-            });
-            
-            // Add ties (multiple ties for visualization)
-            const tieCount = 3; // Show multiple ties for better visualization
-            const tieVerticalSpacing = depth / (tieCount + 1);
-            
-            for (let i = 1; i <= tieCount; i++) {
-                const tie = document.createElement('div');
-                tie.className = 'ties';
-                tie.style.width = `${width - 2*COVER}px`;
-                tie.style.height = `${depth - 2*COVER}px`;
-                tie.style.left = `${COVER}px`;
-                tie.style.top = `${COVER + (i-1)*tieVerticalSpacing}px`;
-                tie.style.borderWidth = isDuctile ? '3px' : '2px';
-                diagram.appendChild(tie);
+            // Position based on corner
+            if (position === 'top-left') {
+                link.style.left = `${x - size/2}px`;
+                link.style.top = `${y - size/2}px`;
+                link.style.borderRight = 'none';
+                link.style.borderBottom = 'none';
+            } else if (position === 'top-right') {
+                link.style.left = `${x - size/2}px`;
+                link.style.top = `${y - size/2}px`;
+                link.style.borderLeft = 'none';
+                link.style.borderBottom = 'none';
+            } else if (position === 'bottom-right') {
+                link.style.left = `${x - size/2}px`;
+                link.style.top = `${y - size/2}px`;
+                link.style.borderLeft = 'none';
+                link.style.borderTop = 'none';
+            } else if (position === 'bottom-left') {
+                link.style.left = `${x - size/2}px`;
+                link.style.top = `${y - size/2}px`;
+                link.style.borderRight = 'none';
+                link.style.borderTop = 'none';
             }
             
-            // Add dimensions
-            addDimension(diagram, 0, 0, width, 0, `${width}mm`, 'top');
-            addDimension(diagram, 0, 0, 0, depth, `${depth}mm`, 'left');
-            addDimension(diagram, COVER, COVER, width-COVER, COVER, `Cover ${COVER}mm`, 'bottom');
+            container.appendChild(link);
         }
         
         function addDimension(container, x1, y1, x2, y2, text, position) {
             const dimension = document.createElement('div');
-            dimension.style.position = 'absolute';
-            dimension.style.borderTop = '1px solid #999';
-            dimension.style.height = '0';
-            dimension.style.width = `${Math.sqrt(Math.pow(x2-x1, 2) + Math.pow(y2-y1, 2))}px`;
-            dimension.style.transformOrigin = '0 0';
-            dimension.style.transform = `rotate(${Math.atan2(y2-y1, x2-x1)}rad)`;
+            dimension.className = 'dimension';
             dimension.style.left = `${x1}px`;
             dimension.style.top = `${y1}px`;
+            dimension.style.width = `${Math.sqrt(Math.pow(x2-x1, 2) + Math.pow(y2-y1, 2))}px`;
+            dimension.style.transform = `rotate(${Math.atan2(y2-y1, x2-x1)}rad)`;
             
             const label = document.createElement('div');
+            label.className = 'dimension-label';
             label.textContent = text;
-            label.style.position = 'absolute';
-            label.style.fontSize = '12px';
-            label.style.color = '#666';
             
             if (position === 'top') {
-                label.style.top = '-20px';
-                label.style.left = '50%';
-                label.style.transform = 'translateX(-50%)';
-            } else if (position === 'bottom') {
-                label.style.bottom = '-20px';
+                label.style.top = '-15px';
                 label.style.left = '50%';
                 label.style.transform = 'translateX(-50%)';
             } else if (position === 'left') {
-                label.style.left = '-60px';
+                label.style.left = '-40px';
                 label.style.top = '50%';
                 label.style.transform = 'translateY(-50%) rotate(-90deg)';
             }
             
             dimension.appendChild(label);
             container.appendChild(dimension);
+        }
+        
+        function exportToPDF() {
+            // Create a new PDF document
+            const doc = new jsPDF('p', 'mm', 'a4');
+            
+            // Add header
+            doc.setFontSize(16);
+            doc.setTextColor(40, 40, 40);
+            doc.text('COLUMN DESIGN CALCULATION REPORT', 105, 15, { align: 'center' });
+            
+            doc.setFontSize(12);
+            doc.text('As per IS 456:2000 & IS 13920:2016', 105, 22, { align: 'center' });
+            
+            // Add date
+            const today = new Date();
+            doc.setFontSize(10);
+            doc.text(`Date: ${today.toLocaleDateString()}`, 15, 15);
+            
+            // Add project info (sample)
+            doc.text('Project: Sample Column Design', 15, 22);
+            
+            // Add a line separator
+            doc.setDrawColor(200, 200, 200);
+            doc.line(15, 25, 195, 25);
+            
+            // Add input parameters section
+            doc.setFontSize(14);
+            doc.setTextColor(30, 30, 30);
+            doc.text('1. Design Input Parameters', 15, 35);
+            
+            doc.setFontSize(11);
+            doc.text(`Column Dimensions: ${document.getElementById('width').value}mm × ${document.getElementById('depth').value}mm`, 20, 42);
+            doc.text(`Axial Load: ${document.getElementById('axialLoad').value} kN`, 20, 48);
+            doc.text(`Moments: Mx = ${document.getElementById('momentX').value} kN·m, My = ${document.getElementById('momentY').value} kN·m`, 20, 54);
+            doc.text(`Materials: M${document.getElementById('concreteGrade').value} concrete, Fe ${document.getElementById('steelGrade').value} steel`, 20, 60);
+            doc.text(`Ductility: ${document.getElementById('ductility').value === 'special' ? 'Special (IS 13920)' : 'Normal (IS 456)'}`, 20, 66);
+            
+            // Add design results section
+            doc.setFontSize(14);
+            doc.text('2. Design Results', 15, 80);
+            
+            doc.setFontSize(11);
+            doc.text(`Status: ${document.getElementById('status').textContent}`, 20, 87);
+            doc.text(`Steel Area: ${document.getElementById('steelArea').textContent}`, 20, 93);
+            doc.text(`Reinforcement: ${document.getElementById('reinforcement').textContent}`, 20, 99);
+            doc.text(`Tie Details: ${document.getElementById('tieDetails').textContent}`, 20, 105);
+            doc.text(`Interaction Ratio: ${document.getElementById('interactionRatio').textContent}`, 20, 111);
+            
+            // Add visualizations section
+            doc.setFontSize(14);
+            doc.text('3. Column Details', 15, 125);
+            
+            // Capture plan view and add to PDF
+            html2canvas(document.getElementById('planView')).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                doc.addImage(imgData, 'PNG', 30, 132, 60, 60);
+                doc.text('Plan View (1:20 scale)', 60, 195, { align: 'center' });
+                
+                // Capture elevation view and add to PDF
+                html2canvas(document.getElementById('elevationView')).then(canvas => {
+                    const imgData = canvas.toDataURL('image/png');
+                    doc.addImage(imgData, 'PNG', 110, 132, 60, 90);
+                    doc.text('Elevation View (1:20 scale)', 140, 225, { align: 'center' });
+                    
+                    // Add notes section
+                    doc.setFontSize(14);
+                    doc.text('4. Design Notes', 15, 235);
+                    
+                    doc.setFontSize(10);
+                    const notes = [
+                        '1. All dimensions are in millimeters unless specified otherwise.',
+                        '2. Concrete cover is 40mm as per IS 456 for columns.',
+                        '3. Reinforcement detailing follows IS 13920 for ductile columns.',
+                        '4. Design assumes short column behavior (slenderness ratio < 12).',
+                        '5. Actual site conditions may require adjustments to the design.'
+                    ];
+                    
+                    notes.forEach((note, i) => {
+                        doc.text(note, 20, 242 + i * 5);
+                    });
+                    
+                    // Add footer
+                    doc.setFontSize(8);
+                    doc.setTextColor(100, 100, 100);
+                    doc.text('Generated by Column Design Calculator', 105, 290, { align: 'center' });
+                    
+                    // Save the PDF
+                    doc.save(`Column_Design_${document.getElementById('width').value}x${document.getElementById('depth').value}_${today.getTime()}.pdf`);
+                });
+            });
         }
     </script>
 </body>
