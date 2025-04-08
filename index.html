@@ -75,6 +75,24 @@
             box-shadow: 0 0 5px rgba(52, 152, 219, 0.5);
         }
         
+        .calculate-btn {
+            background-color: var(--secondary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: 600;
+            transition: background-color 0.3s;
+            margin-top: 10px;
+        }
+        
+        .calculate-btn:hover {
+            background-color: #2980b9;
+        }
+        
         .results {
             background-color: var(--light);
             padding: 20px;
@@ -240,6 +258,8 @@
                         <option value="ACI">ACI Code</option>
                     </select>
                 </div>
+                
+                <button class="calculate-btn" id="calculateBtn">Calculate Design</button>
             </div>
             
             <div class="output-section">
@@ -247,7 +267,7 @@
                 <div class="results" id="results">
                     <div class="result-item">
                         <div class="result-title">Status</div>
-                        <div class="result-value" id="status">Enter values to calculate</div>
+                        <div class="result-value" id="status">Click "Calculate Design" button</div>
                     </div>
                     <div class="result-item">
                         <div class="result-title">Required Steel Area</div>
@@ -283,25 +303,20 @@
                 <div class="code-tab" onclick="showCode('aciCode')">ACI Code</div>
             </div>
             <div class="code-content active" id="isCode">
-                // Calculations will appear here based on input
+                // Calculations will appear here after clicking "Calculate Design"
             </div>
             <div class="code-content" id="aciCode">
-                // Calculations will appear here based on input
+                // Calculations will appear here after clicking "Calculate Design"
             </div>
         </div>
     </div>
 
     <script>
-        // Get all input elements
-        const inputs = document.querySelectorAll('input, select');
+        // Get calculate button
+        const calculateBtn = document.getElementById('calculateBtn');
         
-        // Add event listeners to all inputs for real-time calculation
-        inputs.forEach(input => {
-            input.addEventListener('input', calculateDesign);
-        });
-        
-        // Initial calculation
-        calculateDesign();
+        // Add click event listener to calculate button
+        calculateBtn.addEventListener('click', calculateDesign);
         
         function calculateDesign() {
             // Get input values
@@ -313,6 +328,13 @@
             const fck = parseFloat(document.getElementById('concreteGrade').value);
             const fy = parseFloat(document.getElementById('steelGrade').value);
             const designCode = document.getElementById('designCode').value;
+            
+            // Validate inputs
+            if (isNaN(width) || isNaN(depth) || isNaN(axialLoad) || 
+                isNaN(momentX) || isNaN(momentY)) {
+                alert("Please enter valid numbers for all input fields");
+                return;
+            }
             
             // Calculate column design based on selected code
             if (designCode === 'IS') {
