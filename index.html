@@ -115,6 +115,8 @@
             font-family: 'Courier New', monospace;
             white-space: pre-wrap;
             overflow-x: auto;
+            max-height: 400px;
+            overflow-y: auto;
         }
         
         .manual-input {
@@ -152,6 +154,18 @@
         
         .btn-pdf:hover {
             background-color: #c0392b;
+        }
+        
+        .status-ok {
+            color: #27ae60;
+        }
+        
+        .status-warning {
+            color: #f39c12;
+        }
+        
+        .status-error {
+            color: #e74c3c;
         }
         
         @media (max-width: 768px) {
@@ -300,7 +314,11 @@
         
         // Add event listeners to all inputs for real-time calculation
         inputs.forEach(input => {
-            input.addEventListener('input', calculateDesign);
+            input.addEventListener('input', function() {
+                // Add slight delay to prevent rapid calculations during typing
+                clearTimeout(window.calculationTimeout);
+                window.calculationTimeout = setTimeout(calculateDesign, 300);
+            });
         });
         
         // Add click event for PDF export
@@ -311,27 +329,20 @@
         
         function calculateDesign() {
             // Get input values
-            const width = parseFloat(document.getElementById('width').value);
-            const depth = parseFloat(document.getElementById('depth').value);
-            const axialLoad = parseFloat(document.getElementById('axialLoad').value);
-            const momentX = parseFloat(document.getElementById('momentX').value);
-            const momentY = parseFloat(document.getElementById('momentY').value);
-            const fck = parseFloat(document.getElementById('concreteGrade').value);
-            const fy = parseFloat(document.getElementById('steelGrade').value);
+            const width = parseFloat(document.getElementById('width').value) || 300;
+            const depth = parseFloat(document.getElementById('depth').value) || 300;
+            const axialLoad = parseFloat(document.getElementById('axialLoad').value) || 850;
+            const momentX = parseFloat(document.getElementById('momentX').value) || 15;
+            const momentY = parseFloat(document.getElementById('momentY').value) || 32;
+            const fck = parseFloat(document.getElementById('concreteGrade').value) || 25;
+            const fy = parseFloat(document.getElementById('steelGrade').value) || 500;
             const isDuctile = document.getElementById('ductility').value === 'special';
             
             // Get manual reinforcement input
-            const barDia = parseFloat(document.getElementById('barDiameter').value);
-            const numBars = parseFloat(document.getElementById('barCount').value);
-            const tieDia = parseFloat(document.getElementById('tieDiameter').value);
-            const tieSpacing = parseFloat(document.getElementById('tieSpacing').value);
-            
-            // Validate inputs
-            if (isNaN(width) || isNaN(depth) || isNaN(axialLoad) || 
-                isNaN(momentX) || isNaN(momentY)) {
-                document.getElementById('status').textContent = "Please enter valid numbers";
-                return;
-            }
+            const barDia = parseFloat(document.getElementById('barDiameter').value) || 20;
+            const numBars = parseFloat(document.getElementById('barCount').value) || 8;
+            const tieDia = parseFloat(document.getElementById('tieDiameter').value) || 8;
+            const tieSpacing = parseFloat(document.getElementById('tieSpacing').value) || 150;
             
             // Calculate column design
             const designResults = designAsPerISCode(
@@ -368,6 +379,7 @@
             let requiredAst = minSteel;
             let interactionRatio = Infinity;
             let status = "Design FAILS - Increase section or reinforcement";
+            let statusClass = "status-error";
             
             // Calculate Puz (Clause 39.6, IS 456:2000)
             const Puz = (0.45 * fck * (Ag - requiredAst)) + (0.75 * fy * requiredAst);
@@ -392,6 +404,10 @@
             
             if (interactionRatio <= 1.0) {
                 status = "Design is SAFE";
+                statusClass = "status-ok";
+            } else if (interactionRatio <= 1.1) {
+                status = "Marginally UNSAFE - Consider revising";
+                statusClass = "status-warning";
             }
             
             // Calculate provided steel area
@@ -403,52 +419,74 @@
             
             // Check spacing requirements
             let spacingStatus = "OK";
-            if (isDuctile) {
-                if (clearSpacing < Math.max(75, barDia * 1.5)) {
-                    spacingStatus = "NOT OK (Min spacing: " + Math.max(75, barDia * 1.5) + "mm)";
-                }
-            } else {
-                if (clearSpacing < Math.max(50, barDia)) {
-                    spacingStatus = "NOT OK (Min spacing: " + Math.max(50, barDia) + "mm)";
-                }
+            let spacingClass = "status-ok";
+            const minSpacing = isDuctile ? Math.max(75, barDia * 1.5) : Math.max(50, barDia);
+            if (clearSpacing < minSpacing) {
+                spacingStatus = `NOT OK (Min spacing: ${minSpacing}mm)`;
+                spacingClass = "status-error";
             }
             
             // Check tie spacing requirements
             let tieStatus = "OK";
+            let tieClass = "status-ok";
             let requiredTieSpacing;
             if (isDuctile) {
                 requiredTieSpacing = Math.min(b/4, 6 * barDia, 150);
                 if (tieSpacing > requiredTieSpacing) {
                     tieStatus = `NOT OK (Max spacing: ${requiredTieSpacing}mm)`;
+                    tieClass = "status-error";
                 }
             } else {
                 requiredTieSpacing = Math.min(b, 16 * barDia, 300);
                 if (tieSpacing > requiredTieSpacing) {
                     tieStatus = `NOT OK (Max spacing: ${requiredTieSpacing}mm)`;
+                    tieClass = "status-error";
                 }
             }
             
             // Check minimum tie diameter
             let tieDiaStatus = "OK";
+            let tieDiaClass = "status-ok";
             const minTieDia = Math.max(isDuctile ? 8 : 6, barDia/4);
             if (tieDia < minTieDia) {
                 tieDiaStatus = `NOT OK (Min diameter: ${minTieDia}mm)`;
+                tieDiaClass = "status-error";
+            }
+            
+            // Check steel percentage
+            let steelPercentageStatus = "OK";
+            let steelPercentageClass = "status-ok";
+            const steelPercentage = (providedAst/Ag)*100;
+            if (steelPercentage < 0.8) {
+                steelPercentageStatus = "BELOW MINIMUM (0.8%)";
+                steelPercentageClass = "status-error";
+            } else if (steelPercentage > 4) {
+                steelPercentageStatus = "ABOVE MAXIMUM (4%)";
+                steelPercentageClass = "status-error";
             }
             
             // Update results
             document.getElementById('status').textContent = status;
+            document.getElementById('status').className = `result-value ${statusClass}`;
+            
             document.getElementById('steelArea').textContent = 
                 `${requiredAst.toFixed(0)} mm² (min ${minSteel.toFixed(0)} mm², max ${maxSteel.toFixed(0)} mm²)`;
-            document.getElementById('providedSteel').textContent = 
-                `${providedAst.toFixed(0)} mm² (${(providedAst/Ag*100).toFixed(1)}%)`;
+            
+            document.getElementById('providedSteel').innerHTML = 
+                `${providedAst.toFixed(0)} mm² (${steelPercentage.toFixed(1)}%) <span class="${steelPercentageClass}">${steelPercentageStatus}</span>`;
+            
             document.getElementById('reinforcement').textContent = 
                 `${numBars} bars of ${barDia} mm diameter`;
-            document.getElementById('barSpacing').textContent = 
-                `${clearSpacing.toFixed(1)} mm ${spacingStatus}`;
-            document.getElementById('tieDetails').textContent = 
-                `${tieDia} mm ${isDuctile ? 'ductile' : ''} ties @ ${tieSpacing} mm c/c (${tieStatus})`;
+            
+            document.getElementById('barSpacing').innerHTML = 
+                `${clearSpacing.toFixed(1)} mm <span class="${spacingClass}">${spacingStatus}</span>`;
+            
+            document.getElementById('tieDetails').innerHTML = 
+                `${tieDia} mm <span class="${tieDiaClass}">${tieDiaStatus}</span>, ${tieSpacing} mm c/c <span class="${tieClass}">${tieStatus}</span>`;
+            
+            document.getElementById('interactionRatio').className = `result-value ${interactionRatio <= 1.0 ? "status-ok" : interactionRatio <= 1.1 ? "status-warning" : "status-error"}`;
             document.getElementById('interactionRatio').textContent = 
-                interactionRatio.toFixed(3) + (interactionRatio > 1.0 ? " (Overstressed)" : "");
+                interactionRatio.toFixed(3) + (interactionRatio > 1.0 ? (interactionRatio <= 1.1 ? " (Marginally Over)" : " (Overstressed)") : "");
             
             return {
                 width,
@@ -464,11 +502,14 @@
                 maxSteel,
                 requiredAst,
                 providedAst,
+                steelPercentage,
+                steelPercentageStatus,
                 barDia,
                 numBars,
                 tieDia,
                 tieSpacing,
                 clearSpacing,
+                minSpacing,
                 Puz: Puz/1000,
                 ratio,
                 αn,
@@ -479,7 +520,8 @@
                 spacingStatus,
                 tieStatus,
                 tieDiaStatus,
-                requiredTieSpacing
+                requiredTieSpacing,
+                minTieDia
             };
         }
         
@@ -540,18 +582,21 @@ c) For square column, Muy1 = Mux1 = ${results.Mux1.toFixed(1)} kN·m
 a) Bar Details:
 - Number of bars: ${results.numBars}
 - Bar diameter: ${results.barDia} mm
-- Provided steel area: ${results.providedAst.toFixed(0)} mm² (${(results.providedAst/results.Ag*100).toFixed(1)}%)
+- Provided steel area: ${results.providedAst.toFixed(0)} mm² (${results.steelPercentage.toFixed(1)}%)
+- Status: ${results.steelPercentageStatus}
 
 b) Clear Spacing:
 Total bar width = ${results.numBars} × ${results.barDia} = ${results.numBars * results.barDia} mm
 Clear spacing = (${results.width} - 2×${COVER} - ${results.numBars * results.barDia}) / (${results.numBars} - 1)
               = ${results.clearSpacing.toFixed(1)} mm
-Requirement: ${results.isDuctile ? 'Min 75mm or 1.5×bar diameter' : 'Min 50mm or bar diameter'}
+Requirement: ${results.isDuctile ? 'Min 75mm or 1.5×bar diameter' : 'Min 50mm or bar diameter'} (${results.minSpacing}mm)
 Status: ${results.spacingStatus}
 
 c) Tie Details:
-- Tie diameter: ${results.tieDia} mm (${results.tieDiaStatus})
-- Tie spacing: ${results.tieSpacing} mm (${results.tieStatus})
+- Tie diameter: ${results.tieDia} mm (Min required: ${results.minTieDia}mm)
+  Status: ${results.tieDiaStatus}
+- Tie spacing: ${results.tieSpacing} mm (Max allowed: ${results.requiredTieSpacing}mm)
+  Status: ${results.tieStatus}
 ${results.isDuctile ? '- Special ductile ties as per IS 13920' : '- Normal ties as per IS 456'}
 
 7. DESIGN CONCLUSION
