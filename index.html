@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Column Design Calculator</title>
+    <title>Column Design Calculator (IS Code)</title>
     <style>
         :root {
             --primary: #2c3e50;
@@ -75,24 +75,6 @@
             box-shadow: 0 0 5px rgba(52, 152, 219, 0.5);
         }
         
-        .calculate-btn {
-            background-color: var(--secondary);
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            font-size: 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            width: 100%;
-            font-weight: 600;
-            transition: background-color 0.3s;
-            margin-top: 10px;
-        }
-        
-        .calculate-btn:hover {
-            background-color: #2980b9;
-        }
-        
         .results {
             background-color: var(--light);
             padding: 20px;
@@ -128,49 +110,13 @@
             margin-top: 30px;
         }
         
-        .code-tabs {
-            display: flex;
-            border-bottom: 1px solid #ddd;
-            margin-bottom: 15px;
-        }
-        
-        .code-tab {
-            padding: 10px 20px;
-            cursor: pointer;
-            background: #eee;
-            border: 1px solid #ddd;
-            border-bottom: none;
-            margin-right: 5px;
-            border-radius: 5px 5px 0 0;
-        }
-        
-        .code-tab.active {
-            background: var(--primary);
-            color: white;
-        }
-        
-        .code-content {
-            display: none;
-            background: #f8f8f8;
-            padding: 15px;
-            border-radius: 0 0 5px 5px;
-            border: 1px solid #ddd;
-            border-top: none;
-            white-space: pre-wrap;
-            font-family: monospace;
-        }
-        
-        .code-content.active {
-            display: block;
-        }
-        
         .visualization {
             margin-top: 30px;
             text-align: center;
         }
         
         .column-diagram {
-            width: 200px;
+            width: 300px;
             height: 300px;
             border: 2px solid var(--dark);
             display: inline-block;
@@ -181,17 +127,23 @@
         
         .reinforcement {
             position: absolute;
-            width: 20px;
-            height: 20px;
+            width: 16px;
+            height: 16px;
             border-radius: 50%;
             background-color: var(--accent);
             transform: translate(-50%, -50%);
+            border: 2px solid #fff;
         }
         
         .ties {
             position: absolute;
             border: 2px solid var(--secondary);
-            border-radius: 5px;
+            border-radius: 3px;
+        }
+        
+        .cover {
+            position: absolute;
+            border: 1px dashed #999;
         }
         
         @media (max-width: 768px) {
@@ -203,33 +155,33 @@
 </head>
 <body>
     <div class="container">
-        <h1>Column Design Calculator</h1>
+        <h1>Column Design Calculator (IS 456 & IS 13920)</h1>
         
         <div class="design-section">
             <div class="input-section">
                 <div class="input-group">
                     <label for="width">Column Width (mm)</label>
-                    <input type="number" id="width" value="300" min="150" step="10">
+                    <input type="number" id="width" value="300" min="300" step="25">
                 </div>
                 
                 <div class="input-group">
                     <label for="depth">Column Depth (mm)</label>
-                    <input type="number" id="depth" value="300" min="150" step="10">
+                    <input type="number" id="depth" value="300" min="300" step="25">
                 </div>
                 
                 <div class="input-group">
                     <label for="axialLoad">Axial Load (kN)</label>
-                    <input type="number" id="axialLoad" value="850" min="100" step="10">
+                    <input type="number" id="axialLoad" value="850" min="100" step="50">
                 </div>
                 
                 <div class="input-group">
                     <label for="momentX">Moment about X-axis (kN·m)</label>
-                    <input type="number" id="momentX" value="15" min="0" step="1">
+                    <input type="number" id="momentX" value="15" min="0" step="5">
                 </div>
                 
                 <div class="input-group">
                     <label for="momentY">Moment about Y-axis (kN·m)</label>
-                    <input type="number" id="momentY" value="32" min="0" step="1">
+                    <input type="number" id="momentY" value="32" min="0" step="5">
                 </div>
                 
                 <div class="input-group">
@@ -252,14 +204,12 @@
                 </div>
                 
                 <div class="input-group">
-                    <label for="designCode">Design Code</label>
-                    <select id="designCode">
-                        <option value="IS">IS Code</option>
-                        <option value="ACI">ACI Code</option>
+                    <label for="ductility">Ductility Requirement</label>
+                    <select id="ductility">
+                        <option value="normal">Normal (IS 456)</option>
+                        <option value="special" selected>Special (IS 13920)</option>
                     </select>
                 </div>
-                
-                <button class="calculate-btn" id="calculateBtn">Calculate Design</button>
             </div>
             
             <div class="output-section">
@@ -267,7 +217,7 @@
                 <div class="results" id="results">
                     <div class="result-item">
                         <div class="result-title">Status</div>
-                        <div class="result-value" id="status">Click "Calculate Design" button</div>
+                        <div class="result-value" id="status">Enter values to calculate</div>
                     </div>
                     <div class="result-item">
                         <div class="result-title">Required Steel Area</div>
@@ -278,7 +228,7 @@
                         <div class="result-value" id="reinforcement">-</div>
                     </div>
                     <div class="result-item">
-                        <div class="result-title">Tie Details</div>
+                        <div class="result-title">Tie Details (IS 13920)</div>
                         <div class="result-value" id="tieDetails">-</div>
                     </div>
                     <div class="result-item">
@@ -288,35 +238,32 @@
                 </div>
                 
                 <div class="visualization">
-                    <h3>Column Cross-Section</h3>
+                    <h3>Column Cross-Section (40mm cover as per IS 456)</h3>
                     <div class="column-diagram" id="columnDiagram">
-                        <!-- Reinforcement bars will be added here dynamically -->
+                        <!-- Reinforcement bars and ties will be added here dynamically -->
                     </div>
                 </div>
-            </div>
-        </div>
-        
-        <div class="code-section">
-            <h3>Design Calculations</h3>
-            <div class="code-tabs">
-                <div class="code-tab active" onclick="showCode('isCode')">IS Code</div>
-                <div class="code-tab" onclick="showCode('aciCode')">ACI Code</div>
-            </div>
-            <div class="code-content active" id="isCode">
-                // Calculations will appear here after clicking "Calculate Design"
-            </div>
-            <div class="code-content" id="aciCode">
-                // Calculations will appear here after clicking "Calculate Design"
             </div>
         </div>
     </div>
 
     <script>
-        // Get calculate button
-        const calculateBtn = document.getElementById('calculateBtn');
+        // Constants as per IS Codes
+        const COVER = 40; // mm as per IS 456 for columns
+        const MIN_BAR_DIA = 12; // mm minimum bar diameter
+        const MAX_BAR_DIA = 32; // mm maximum bar diameter
+        const MIN_BARS = 4; // Minimum number of bars as per IS 456
         
-        // Add click event listener to calculate button
-        calculateBtn.addEventListener('click', calculateDesign);
+        // Get all input elements
+        const inputs = document.querySelectorAll('input, select');
+        
+        // Add event listeners to all inputs for real-time calculation
+        inputs.forEach(input => {
+            input.addEventListener('input', calculateDesign);
+        });
+        
+        // Initial calculation
+        calculateDesign();
         
         function calculateDesign() {
             // Get input values
@@ -327,35 +274,28 @@
             const momentY = parseFloat(document.getElementById('momentY').value);
             const fck = parseFloat(document.getElementById('concreteGrade').value);
             const fy = parseFloat(document.getElementById('steelGrade').value);
-            const designCode = document.getElementById('designCode').value;
+            const isDuctile = document.getElementById('ductility').value === 'special';
             
             // Validate inputs
             if (isNaN(width) || isNaN(depth) || isNaN(axialLoad) || 
                 isNaN(momentX) || isNaN(momentY)) {
-                alert("Please enter valid numbers for all input fields");
+                document.getElementById('status').textContent = "Please enter valid numbers";
                 return;
             }
             
-            // Calculate column design based on selected code
-            if (designCode === 'IS') {
-                designAsPerISCode(width, depth, axialLoad, momentX, momentY, fck, fy);
-            } else {
-                designAsPerACICode(width, depth, axialLoad, momentX, momentY, fck, fy);
-            }
-            
-            // Update visualization
-            updateVisualization(width, depth);
+            // Calculate column design
+            designAsPerISCode(width, depth, axialLoad, momentX, momentY, fck, fy, isDuctile);
         }
         
-        function designAsPerISCode(width, depth, Pu, Mux, Muy, fck, fy) {
+        function designAsPerISCode(width, depth, Pu, Mux, Muy, fck, fy, isDuctile) {
             // Convert units
             Pu = Pu * 1000; // kN to N
             Mux = Mux * 1e6; // kN·m to N·mm
             Muy = Muy * 1e6; // kN·m to N·mm
             
             // Column dimensions
-            const b = width;
-            const D = depth;
+            const b = Math.min(width, depth);
+            const D = Math.max(width, depth);
             const Ag = b * D;
             
             // Material properties
@@ -364,226 +304,242 @@
             const fcd = 0.67 * fck / γm_conc;
             const fyd = fy / γm_steel;
             
-            // Assume 2% steel initially
-            const p = 0.02;
-            const Ast = p * Ag;
+            // Calculate minimum and maximum steel (IS 456 Clause 26.5.3)
+            const minSteel = 0.008 * Ag; // 0.8%
+            const maxSteel = 0.04 * Ag; // 4%
             
-            // Calculate Puz (Clause 39.6, IS 456:2000)
-            const Puz = (0.45 * fck * (Ag - Ast)) + (0.75 * fy * Ast);
+            // Start with minimum steel
+            let Ast = minSteel;
+            let interactionRatio = Infinity;
+            let requiredAst = minSteel;
+            let status = "Design FAILS - Increase section";
             
-            // Calculate αn (Clause 39.6)
-            const ratio = Pu / Puz;
-            const αn = ratio <= 0.2 ? 1.0 : 0.2 + (ratio <= 0.8 ? ratio : 0.8);
-            
-            // Calculate moment capacities (simplified approach)
-            // This would normally require detailed interaction diagrams
-            // For demo purposes, we'll use simplified calculations
-            const d_prime = 40; // Effective cover
-            const d = D - d_prime;
-            
-            // Simplified Mux1 calculation (for symmetric reinforcement)
-            const Mux1 = 0.36 * fck * b * d * d * (1 - (0.42 * (0.48 * d) / d) + 
-                         0.87 * fy * Ast * 0.5 * (d - d_prime);
-            
-            // For square column, Muy1 = Mux1
-            const Muy1 = Mux1;
-            
-            // Check interaction equation (Clause 39.6)
-            const interactionRatio = Math.pow(Mux/Mux1, αn) + Math.pow(Muy/Muy1, αn);
-            
-            // Determine status
-            let status = interactionRatio <= 1.0 ? "Design is SAFE" : "Design FAILS - Increase section or reinforcement";
-            
-            // Calculate required reinforcement (simplified)
-            let requiredAst = Ast;
-            if (interactionRatio > 1.0) {
-                // Increase reinforcement by the ratio needed
-                requiredAst = Ast * interactionRatio;
+            // Iterate to find required steel (simplified approach)
+            for (let p = 0.008; p <= 0.04; p += 0.001) {
+                Ast = p * Ag;
+                
+                // Calculate Puz (Clause 39.6, IS 456:2000)
+                const Puz = (0.45 * fck * (Ag - Ast)) + (0.75 * fy * Ast);
+                
+                // Calculate αn (Clause 39.6)
+                const ratio = Pu / Puz;
+                const αn = ratio <= 0.2 ? 1.0 : 0.2 + (ratio <= 0.8 ? ratio : 0.8);
+                
+                // Calculate moment capacities (simplified)
+                const d_prime = COVER + 10; // Cover + half of tie diameter
+                const d = D - d_prime;
+                
+                // Simplified Mux1 calculation
+                const Mux1 = 0.36 * fck * b * d * d * (1 - (0.42 * (0.48 * d) / d)) + 
+                             0.87 * fy * Ast * 0.5 * (d - d_prime);
+                
+                // For rectangular column, Muy1 might differ but we'll keep same for simplicity
+                const Muy1 = Mux1;
+                
+                // Check interaction equation (Clause 39.6)
+                interactionRatio = Math.pow(Mux/Mux1, αn) + Math.pow(Muy/Muy1, αn);
+                
+                if (interactionRatio <= 1.0) {
+                    requiredAst = Ast;
+                    status = "Design is SAFE";
+                    break;
+                }
             }
             
-            // Determine bar configuration
-            const barDia = 20; // mm
-            const barArea = Math.PI * barDia * barDia / 4;
-            const numBars = Math.ceil(requiredAst / barArea);
+            // Determine bar configuration as per IS 13920 for ductile detailing
+            let barDia = MIN_BAR_DIA;
+            let numBars = MIN_BARS;
             
-            // Tie details
-            const tieDia = Math.max(6, barDia/4);
-            const tieSpacing = Math.min(16 * barDia, 48 * tieDia, b);
+            // Find optimal bar diameter and number
+            for (let dia = MIN_BAR_DIA; dia <= MAX_BAR_DIA; dia += 2) {
+                const barArea = Math.PI * dia * dia / 4;
+                numBars = Math.max(MIN_BARS, Math.ceil(requiredAst / barArea));
+                
+                // Check spacing requirements
+                const clearSpacing = (b - (2 * COVER) - (numBars * dia)) / (numBars - 1);
+                
+                // IS 13920 requirements for special ductile columns
+                if (isDuctile) {
+                    if (clearSpacing >= Math.max(75, dia * 1.5)) {
+                        barDia = dia;
+                        break;
+                    }
+                } else {
+                    if (clearSpacing >= Math.max(50, dia)) {
+                        barDia = dia;
+                        break;
+                    }
+                }
+            }
+            
+            // Calculate actual provided steel area
+            const actualAst = numBars * Math.PI * barDia * barDia / 4;
+            
+            // Tie details as per IS 13920
+            let tieDia, tieSpacing;
+            if (isDuctile) {
+                tieDia = Math.max(8, barDia/4); // IS 13920 Clause 7.4.6
+                tieSpacing = Math.min(
+                    b/4, // Least lateral dimension/4
+                    6 * barDia, // 6 times smallest longitudinal bar diameter
+                    150 // 150mm
+                );
+            } else {
+                tieDia = Math.max(6, barDia/4); // IS 456 Clause 26.5.3.2
+                tieSpacing = Math.min(
+                    b, // Least lateral dimension
+                    16 * barDia, // 16 times smallest longitudinal bar diameter
+                    300 // 300mm
+                );
+            }
+            
+            // Round tie spacing to nearest 25mm for practicality
+            tieSpacing = Math.max(75, Math.round(tieSpacing / 25) * 25);
             
             // Update results
             document.getElementById('status').textContent = status;
-            document.getElementById('steelArea').textContent = `${requiredAst.toFixed(0)} mm² (${(requiredAst/Ag*100).toFixed(1)}%)`;
-            document.getElementById('reinforcement').textContent = `${numBars} bars of ${barDia} mm diameter`;
-            document.getElementById('tieDetails').textContent = `${tieDia} mm ties @ ${tieSpacing} mm c/c`;
-            document.getElementById('interactionRatio').textContent = interactionRatio.toFixed(3);
+            document.getElementById('steelArea').textContent = 
+                `${requiredAst.toFixed(0)} mm² (min ${minSteel.toFixed(0)} mm², provided ${actualAst.toFixed(0)} mm²)`;
+            document.getElementById('reinforcement').textContent = 
+                `${numBars} bars of ${barDia} mm diameter`;
+            document.getElementById('tieDetails').textContent = 
+                `${tieDia} mm ${isDuctile ? 'ductile' : ''} ties @ ${tieSpacing} mm c/c`;
+            document.getElementById('interactionRatio').textContent = 
+                interactionRatio.toFixed(3) + (interactionRatio > 1.0 ? " (Overstressed)" : "");
             
-            // Update calculation display
-            document.getElementById('isCode').textContent = 
-`// IS 456:2000 Column Design Calculations
-
-Input Parameters:
-- Column Size: ${b} × ${D} mm
-- Axial Load (Pu): ${Pu/1000} kN
-- Moments (Mux, Muy): ${Mux/1e6}, ${Muy/1e6} kN·m
-- Materials: M${fck} concrete, Fe ${fy} steel
-
-Calculations:
-1. Gross Area (Ag) = ${b} × ${D} = ${Ag} mm²
-2. Assuming ${p*100}% steel → Ast = ${Ast.toFixed(0)} mm²
-3. Puz = 0.45×fck×(Ag-Ast) + 0.75×fy×Ast
-   = 0.45×${fck}×${Ag-Ast} + 0.75×${fy}×${Ast}
-   = ${Puz.toFixed(0)} N (${(Puz/1000).toFixed(1)} kN)
-4. Pu/Puz = ${ratio.toFixed(3)} → αn = ${αn.toFixed(3)}
-5. Mux1 = ${(Mux1/1e6).toFixed(1)} kN·m (simplified calc)
-6. Interaction Check:
-   (${Mux/1e6}/${Mux1/1e6})^${αn.toFixed(3)} + (${Muy/1e6}/${Muy1/1e6})^${αn.toFixed(3)}
-   = ${interactionRatio.toFixed(3)} ${interactionRatio <= 1.0 ? "≤ 1.0 → SAFE" : "> 1.0 → UNSAFE"}
-
-Design Result:
-- Required Steel: ${requiredAst.toFixed(0)} mm²
-- Reinforcement: ${numBars} nos. ${barDia} mm dia bars
-- Ties: ${tieDia} mm @ ${tieSpacing} mm c/c`;
+            // Update visualization with proper detailing
+            updateVisualization(width, depth, numBars, barDia, tieDia, tieSpacing, isDuctile);
         }
         
-        function designAsPerACICode(width, depth, Pu, Mux, Muy, fck, fy) {
-            // Convert units
-            Pu = Pu * 1000; // kN to N
-            Mux = Mux * 1e6; // kN·m to N·mm
-            Muy = Muy * 1e6; // kN·m to N·mm
-            
-            // Column dimensions
-            const b = width;
-            const D = depth;
-            const Ag = b * D;
-            
-            // Material properties (ACI uses psi, but we'll keep MPa for demo)
-            const fpc = 0.85 * fck; // ACI equivalent concrete strength
-            const ϕ = 0.65; // Strength reduction factor for tied columns
-            
-            // Assume 2% steel initially
-            const p = 0.02;
-            const Ast = p * Ag;
-            
-            // Calculate nominal axial strength at zero eccentricity (ACI 318-19 22.4.2)
-            const Po = (0.85 * fpc * (Ag - Ast)) + (fy * Ast);
-            
-            // Maximum design axial strength (ACI 318-19 22.4.2.1)
-            const ϕPn_max = 0.80 * ϕ * Po;
-            
-            // Simplified biaxial bending check (Bresler's method)
-            // For demo, we'll use a simplified interaction ratio
-            // In practice, you'd use interaction diagrams or more complex calculations
-            const Mnx = 0.1 * Ag * D * fpc; // Simplified nominal moment capacity x
-            const Mny = 0.1 * Ag * b * fpc; // Simplified nominal moment capacity y
-            
-            // Interaction equation (simplified)
-            const interactionRatio = Math.pow(Mux/(ϕ*Mnx), 1.5) + Math.pow(Muy/(ϕ*Mny), 1.5);
-            
-            // Determine status
-            let status = interactionRatio <= 1.0 ? "Design is SAFE" : "Design FAILS - Increase section or reinforcement";
-            
-            // Calculate required reinforcement (simplified)
-            let requiredAst = Ast;
-            if (interactionRatio > 1.0) {
-                // Increase reinforcement by the ratio needed
-                requiredAst = Ast * interactionRatio;
-            }
-            
-            // Determine bar configuration
-            const barDia = 20; // mm
-            const barArea = Math.PI * barDia * barDia / 4;
-            const numBars = Math.ceil(requiredAst / barArea);
-            
-            // Tie details (ACI 318-19 25.7.2)
-            const tieDia = Math.max(10, barDia/4);
-            const tieSpacing = Math.min(16 * barDia, 48 * tieDia, b);
-            
-            // Update results
-            document.getElementById('status').textContent = status;
-            document.getElementById('steelArea').textContent = `${requiredAst.toFixed(0)} mm² (${(requiredAst/Ag*100).toFixed(1)}%)`;
-            document.getElementById('reinforcement').textContent = `${numBars} bars of ${barDia} mm diameter`;
-            document.getElementById('tieDetails').textContent = `${tieDia} mm ties @ ${tieSpacing} mm c/c`;
-            document.getElementById('interactionRatio').textContent = interactionRatio.toFixed(3);
-            
-            // Update calculation display
-            document.getElementById('aciCode').textContent = 
-`// ACI 318-19 Column Design Calculations
-
-Input Parameters:
-- Column Size: ${b} × ${D} mm
-- Axial Load (Pu): ${Pu/1000} kN
-- Moments (Mux, Muy): ${Mux/1e6}, ${Muy/1e6} kN·m
-- Materials: ${fck} MPa concrete, ${fy} MPa steel
-
-Calculations:
-1. Gross Area (Ag) = ${b} × ${D} = ${Ag} mm²
-2. Assuming ${p*100}% steel → Ast = ${Ast.toFixed(0)} mm²
-3. Nominal Axial Strength (Po) = 0.85×f'c×(Ag-Ast) + fy×Ast
-   = 0.85×${fpc}×${Ag-Ast} + ${fy}×${Ast}
-   = ${Po.toFixed(0)} N (${(Po/1000).toFixed(1)} kN)
-4. Maximum Design Axial Strength (ϕPn_max) = 0.80×ϕ×Po
-   = 0.80×${ϕ}×${Po} = ${ϕPn_max.toFixed(0)} N (${(ϕPn_max/1000).toFixed(1)} kN)
-5. Simplified Moment Capacities:
-   - Mnx ≈ ${(Mnx/1e6).toFixed(1)} kN·m
-   - Mny ≈ ${(Mny/1e6).toFixed(1)} kN·m
-6. Biaxial Interaction Check (Bresler's method):
-   (${Mux/1e6}/(${ϕ}×${Mnx/1e6}))^1.5 + (${Muy/1e6}/(${ϕ}×${Mny/1e6}))^1.5
-   = ${interactionRatio.toFixed(3)} ${interactionRatio <= 1.0 ? "≤ 1.0 → SAFE" : "> 1.0 → UNSAFE"}
-
-Design Result:
-- Required Steel: ${requiredAst.toFixed(0)} mm²
-- Reinforcement: ${numBars} nos. ${barDia} mm dia bars
-- Ties: ${tieDia} mm @ ${tieSpacing} mm c/c`;
-        }
-        
-        function updateVisualization(width, depth) {
+        function updateVisualization(width, depth, numBars, barDia, tieDia, tieSpacing, isDuctile) {
             const diagram = document.getElementById('columnDiagram');
             diagram.style.width = `${width}px`;
             diagram.style.height = `${depth}px`;
             
-            // Clear existing reinforcement
+            // Clear existing elements
             diagram.innerHTML = '';
             
-            // Add reinforcement bars (simplified - 4 corners for demo)
-            const barPositions = [
-                { x: 0.15, y: 0.15 },
-                { x: 0.85, y: 0.15 },
-                { x: 0.15, y: 0.85 },
-                { x: 0.85, y: 0.85 }
-            ];
+            // Add cover indication
+            const cover = document.createElement('div');
+            cover.className = 'cover';
+            cover.style.width = `${width - 2*COVER}px`;
+            cover.style.height = `${depth - 2*COVER}px`;
+            cover.style.left = `${COVER}px`;
+            cover.style.top = `${COVER}px`;
+            diagram.appendChild(cover);
             
-            barPositions.forEach(pos => {
+            // Calculate bar positions (as per IS 13920 for ductile detailing)
+            const effectiveWidth = width - 2 * COVER;
+            const effectiveDepth = depth - 2 * COVER;
+            
+            // For simplicity, we'll distribute bars evenly along perimeter
+            const barsPerSide = Math.max(2, Math.ceil(numBars / 4));
+            const xSpacing = effectiveWidth / (barsPerSide - 1);
+            const ySpacing = effectiveDepth / (barsPerSide - 1);
+            
+            // Place bars along all four sides
+            const barPositions = [];
+            
+            // Top side
+            for (let i = 0; i < barsPerSide; i++) {
+                barPositions.push({
+                    x: COVER + i * xSpacing,
+                    y: COVER
+                });
+            }
+            
+            // Right side
+            for (let i = 1; i < barsPerSide - 1; i++) {
+                barPositions.push({
+                    x: COVER + effectiveWidth,
+                    y: COVER + i * ySpacing
+                });
+            }
+            
+            // Bottom side
+            for (let i = 0; i < barsPerSide; i++) {
+                barPositions.push({
+                    x: COVER + i * xSpacing,
+                    y: COVER + effectiveDepth
+                });
+            }
+            
+            // Left side
+            for (let i = 1; i < barsPerSide - 1; i++) {
+                barPositions.push({
+                    x: COVER,
+                    y: COVER + i * ySpacing
+                });
+            }
+            
+            // Limit to actual number of bars needed
+            const finalBarPositions = barPositions.slice(0, numBars);
+            
+            // Add reinforcement bars
+            finalBarPositions.forEach(pos => {
                 const bar = document.createElement('div');
                 bar.className = 'reinforcement';
-                bar.style.left = `${pos.x * 100}%`;
-                bar.style.top = `${pos.y * 100}%`;
+                bar.style.width = `${barDia}px`;
+                bar.style.height = `${barDia}px`;
+                bar.style.left = `${pos.x}px`;
+                bar.style.top = `${pos.y}px`;
                 diagram.appendChild(bar);
             });
             
-            // Add ties (simplified - one in the middle for demo)
-            const tie = document.createElement('div');
-            tie.className = 'ties';
-            tie.style.width = `${width * 0.7}px`;
-            tie.style.height = `${depth * 0.7}px`;
-            tie.style.left = `${width * 0.15}px`;
-            tie.style.top = `${depth * 0.15}px`;
-            diagram.appendChild(tie);
+            // Add ties (multiple ties for visualization)
+            const tieCount = 3; // Show multiple ties for better visualization
+            const tieVerticalSpacing = depth / (tieCount + 1);
+            
+            for (let i = 1; i <= tieCount; i++) {
+                const tie = document.createElement('div');
+                tie.className = 'ties';
+                tie.style.width = `${width - 2*COVER}px`;
+                tie.style.height = `${depth - 2*COVER}px`;
+                tie.style.left = `${COVER}px`;
+                tie.style.top = `${COVER + (i-1)*tieVerticalSpacing}px`;
+                tie.style.borderWidth = isDuctile ? '3px' : '2px';
+                diagram.appendChild(tie);
+            }
+            
+            // Add dimensions
+            addDimension(diagram, 0, 0, width, 0, `${width}mm`, 'top');
+            addDimension(diagram, 0, 0, 0, depth, `${depth}mm`, 'left');
+            addDimension(diagram, COVER, COVER, width-COVER, COVER, `Cover ${COVER}mm`, 'bottom');
         }
         
-        function showCode(codeId) {
-            // Hide all code content
-            document.querySelectorAll('.code-content').forEach(content => {
-                content.classList.remove('active');
-            });
+        function addDimension(container, x1, y1, x2, y2, text, position) {
+            const dimension = document.createElement('div');
+            dimension.style.position = 'absolute';
+            dimension.style.borderTop = '1px solid #999';
+            dimension.style.height = '0';
+            dimension.style.width = `${Math.sqrt(Math.pow(x2-x1, 2) + Math.pow(y2-y1, 2))}px`;
+            dimension.style.transformOrigin = '0 0';
+            dimension.style.transform = `rotate(${Math.atan2(y2-y1, x2-x1)}rad)`;
+            dimension.style.left = `${x1}px`;
+            dimension.style.top = `${y1}px`;
             
-            // Deactivate all tabs
-            document.querySelectorAll('.code-tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
+            const label = document.createElement('div');
+            label.textContent = text;
+            label.style.position = 'absolute';
+            label.style.fontSize = '12px';
+            label.style.color = '#666';
             
-            // Activate selected tab and content
-            document.getElementById(codeId).classList.add('active');
-            event.currentTarget.classList.add('active');
+            if (position === 'top') {
+                label.style.top = '-20px';
+                label.style.left = '50%';
+                label.style.transform = 'translateX(-50%)';
+            } else if (position === 'bottom') {
+                label.style.bottom = '-20px';
+                label.style.left = '50%';
+                label.style.transform = 'translateX(-50%)';
+            } else if (position === 'left') {
+                label.style.left = '-60px';
+                label.style.top = '50%';
+                label.style.transform = 'translateY(-50%) rotate(-90deg)';
+            }
+            
+            dimension.appendChild(label);
+            container.appendChild(dimension);
         }
     </script>
 </body>
