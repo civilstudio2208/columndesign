@@ -314,11 +314,7 @@
         
         // Add event listeners to all inputs for real-time calculation
         inputs.forEach(input => {
-            input.addEventListener('input', function() {
-                // Add slight delay to prevent rapid calculations during typing
-                clearTimeout(window.calculationTimeout);
-                window.calculationTimeout = setTimeout(calculateDesign, 300);
-            });
+            input.addEventListener('input', calculateDesign);
         });
         
         // Add click event for PDF export
@@ -328,7 +324,7 @@
         calculateDesign();
         
         function calculateDesign() {
-            // Get input values
+            // Get input values with proper fallbacks
             const width = parseFloat(document.getElementById('width').value) || 300;
             const depth = parseFloat(document.getElementById('depth').value) || 300;
             const axialLoad = parseFloat(document.getElementById('axialLoad').value) || 850;
@@ -338,7 +334,7 @@
             const fy = parseFloat(document.getElementById('steelGrade').value) || 500;
             const isDuctile = document.getElementById('ductility').value === 'special';
             
-            // Get manual reinforcement input
+            // Get manual reinforcement input with proper fallbacks
             const barDia = parseFloat(document.getElementById('barDiameter').value) || 20;
             const numBars = parseFloat(document.getElementById('barCount').value) || 8;
             const tieDia = parseFloat(document.getElementById('tieDiameter').value) || 8;
@@ -393,7 +389,7 @@
             const d = D - d_prime;
             
             // Simplified Mux1 calculation
-            const Mux1 = 0.36 * fck * b * d * d * (1 - (0.42 * (0.48 * d) / d) + 
+            const Mux1 = 0.36 * fck * b * d * d * (1 - (0.42 * (0.48 * d) / d)) + 
                          0.87 * fy * requiredAst * 0.5 * (d - d_prime);
             
             // For rectangular column, Muy1 might differ but we'll keep same for simplicity
