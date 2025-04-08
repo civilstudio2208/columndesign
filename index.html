@@ -1,42 +1,26 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Plan Irregularity Check - IS 1893:2016</title>
-<link rel="stylesheet" href="style.css">
-</head>
-<body>
+<div class="input-section">
+   <h2>Column Design Inputs</h2>
+   <label>Column Size:</label>
+   <input type="text" id="column-size" value="300x300 mm">
 
-<section class="container">
-  <h1>Plan Irregularity Check (IS 1893:2016)</h1>
+   <label>Axial Load (Pu):</label>
+   <input type="number" id="axial-load" value="850">
 
-  <div class="input-section">
-    <h2>Input Data</h2>
-    <label>Plan Dimension X (m): <input type="number" id="planX" value="30"></label>
-    <label>Plan Dimension Y (m): <input type="number" id="planY" value="40"></label>
-    <label>Building Height (m): <input type="number" id="height" value="45"></label>
-    <label>Seismic Zone: <select id="zone">
-      <option value="III">Zone III</option>
-      <option value="IV">Zone IV</option>
-      <option value="V">Zone V</option>
-    </select></label>
-    <label>Soil Type: <select id="soil">
-      <option value="Type II">Medium (Type II)</option>
-      <option value="Type I">Hard (Type I)</option>
-      <option value="Type III">Soft (Type III)</option>
-    </select></label>
-    <label>Delta Max (mm): <input type="number" id="deltaMax" value="14"></label>
-    <label>Delta Avg (mm): <input type="number" id="deltaAvg" value="12"></label>
-  </div>
+   <label>Moment Mx:</label>
+   <input type="number" id="moment-x" value="15">
 
-  <div class="output-section">
-    <h2>Output Results</h2>
-    <div id="torsional-result" class="result-box"></div>
-  </div>
+   <label>Moment My:</label>
+   <input type="number" id="moment-y" value="32">
 
-</section>
+   <label>Concrete Grade:</label>
+   <select id="concrete-grade">
+      <option value="25">M25</option>
+      <option value="30">M30</option>
+   </select>
 
-<script src="script.js"></script>
-</body>
-</html>
+   <label>Steel Grade:</label>
+   <select id="steel-grade">
+      <option value="500">Fe500</option>
+      <option value="415">Fe415</option>
+   </select>
+</div>
