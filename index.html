@@ -1,39 +1,56 @@
-document.addEventListener('DOMContentLoaded', () => {
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Real-Time Column Design | IS 456 & ACI 318</title>
+<link rel="stylesheet" href="style.css">
+<script defer src="script.js"></script>
+</head>
+<body>
 
-  const colSize = document.getElementById('colSize');
-  const axialLoad = document.getElementById('axialLoad');
-  const momentX = document.getElementById('momentX');
-  const momentY = document.getElementById('momentY');
-  const fck = document.getElementById('fck');
-  const fy = document.getElementById('fy');
+<section class="container">
+  <h1>Advanced Column Design Calculator</h1>
 
-  const eValue = document.getElementById('eValue');
-  const puRatio = document.getElementById('puRatio');
-  const designStatus = document.getElementById('designStatus');
+  <div class="input-section">
+    <div class="input-group">
+      <label>Column Size (mm x mm)</label>
+      <input type="number" id="colX" value="300">
+      <input type="number" id="colY" value="300">
+    </div>
 
-  function calculateDesign() {
-    const colArea = parseFloat(colSize.value) * parseFloat(colSize.value) / 1000000; // m2
-    const E = 5000 * Math.sqrt(parseFloat(fck.value));
-    const pu = parseFloat(axialLoad.value);
+    <div class="input-group">
+      <label>Axial Load (kN)</label>
+      <input type="number" id="axialLoad" value="850">
+    </div>
 
-    const puByFckAc = pu / (parseFloat(fck.value) * colArea * 1000); // converting m2 to mm2
+    <div class="input-group">
+      <label>Moment Mx (kNm)</label>
+      <input type="number" id="momentMx" value="15">
+    </div>
 
-    eValue.innerHTML = E.toFixed(2);
-    puRatio.innerHTML = puByFckAc.toFixed(3);
+    <div class="input-group">
+      <label>Moment My (kNm)</label>
+      <input type="number" id="momentMy" value="32">
+    </div>
 
-    if(puByFckAc <= 0.4){
-      designStatus.innerHTML = 'Safe';
-      designStatus.style.color = '#00FFAB';
-    } else {
-      designStatus.innerHTML = 'Unsafe';
-      designStatus.style.color = 'red';
-    }
-  }
+    <div class="input-group">
+      <label>Concrete Grade (fck in MPa)</label>
+      <input type="number" id="fck" value="25">
+    </div>
 
-  [colSize, axialLoad, momentX, momentY, fck, fy].forEach(input => {
-    input.addEventListener('input', calculateDesign);
-  });
+    <div class="input-group">
+      <label>Steel Grade (fy in MPa)</label>
+      <input type="number" id="fy" value="500">
+    </div>
+  </div>
 
-  calculateDesign();
+  <div class="output-section">
+    <h2>Results</h2>
+    <div id="resultContainer" class="result"></div>
+  </div>
 
-});
+</section>
+
+</body>
+</html>
