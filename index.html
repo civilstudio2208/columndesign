@@ -1,56 +1,568 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Real-Time Column Design | IS 456 & ACI 318</title>
-<link rel="stylesheet" href="style.css">
-<script defer src="script.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Column Design Calculator</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --accent: #e74c3c;
+            --light: #ecf0f1;
+            --dark: #2c3e50;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--dark);
+            background-color: #f5f7fa;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            color: var(--primary);
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--secondary);
+            padding-bottom: 10px;
+        }
+        
+        .design-section {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .input-section, .output-section {
+            flex: 1;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--primary);
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            transition: border 0.3s;
+        }
+        
+        input:focus, select:focus {
+            border-color: var(--secondary);
+            outline: none;
+            box-shadow: 0 0 5px rgba(52, 152, 219, 0.5);
+        }
+        
+        .results {
+            background-color: var(--light);
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        .result-item {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px dashed #ccc;
+        }
+        
+        .result-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        
+        .result-title {
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+        
+        .result-value {
+            font-size: 18px;
+            color: var(--accent);
+            font-weight: 700;
+        }
+        
+        .code-section {
+            margin-top: 30px;
+        }
+        
+        .code-tabs {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 15px;
+        }
+        
+        .code-tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background: #eee;
+            border: 1px solid #ddd;
+            border-bottom: none;
+            margin-right: 5px;
+            border-radius: 5px 5px 0 0;
+        }
+        
+        .code-tab.active {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .code-content {
+            display: none;
+            background: #f8f8f8;
+            padding: 15px;
+            border-radius: 0 0 5px 5px;
+            border: 1px solid #ddd;
+            border-top: none;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        
+        .code-content.active {
+            display: block;
+        }
+        
+        .visualization {
+            margin-top: 30px;
+            text-align: center;
+        }
+        
+        .column-diagram {
+            width: 200px;
+            height: 300px;
+            border: 2px solid var(--dark);
+            display: inline-block;
+            position: relative;
+            background-color: #f0f0f0;
+            margin: 0 auto;
+        }
+        
+        .reinforcement {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: var(--accent);
+            transform: translate(-50%, -50%);
+        }
+        
+        .ties {
+            position: absolute;
+            border: 2px solid var(--secondary);
+            border-radius: 5px;
+        }
+        
+        @media (max-width: 768px) {
+            .design-section {
+                flex-direction: column;
+            }
+        }
+    </style>
 </head>
 <body>
-
-<section class="container">
-  <h1>Advanced Column Design Calculator</h1>
-
-  <div class="input-section">
-    <div class="input-group">
-      <label>Column Size (mm x mm)</label>
-      <input type="number" id="colX" value="300">
-      <input type="number" id="colY" value="300">
+    <div class="container">
+        <h1>Column Design Calculator</h1>
+        
+        <div class="design-section">
+            <div class="input-section">
+                <div class="input-group">
+                    <label for="width">Column Width (mm)</label>
+                    <input type="number" id="width" value="300" min="150" step="10">
+                </div>
+                
+                <div class="input-group">
+                    <label for="depth">Column Depth (mm)</label>
+                    <input type="number" id="depth" value="300" min="150" step="10">
+                </div>
+                
+                <div class="input-group">
+                    <label for="axialLoad">Axial Load (kN)</label>
+                    <input type="number" id="axialLoad" value="850" min="100" step="10">
+                </div>
+                
+                <div class="input-group">
+                    <label for="momentX">Moment about X-axis (kN·m)</label>
+                    <input type="number" id="momentX" value="15" min="0" step="1">
+                </div>
+                
+                <div class="input-group">
+                    <label for="momentY">Moment about Y-axis (kN·m)</label>
+                    <input type="number" id="momentY" value="32" min="0" step="1">
+                </div>
+                
+                <div class="input-group">
+                    <label for="concreteGrade">Concrete Grade</label>
+                    <select id="concreteGrade">
+                        <option value="20">M20</option>
+                        <option value="25" selected>M25</option>
+                        <option value="30">M30</option>
+                        <option value="35">M35</option>
+                        <option value="40">M40</option>
+                    </select>
+                </div>
+                
+                <div class="input-group">
+                    <label for="steelGrade">Steel Grade</label>
+                    <select id="steelGrade">
+                        <option value="415">Fe 415</option>
+                        <option value="500" selected>Fe 500</option>
+                    </select>
+                </div>
+                
+                <div class="input-group">
+                    <label for="designCode">Design Code</label>
+                    <select id="designCode">
+                        <option value="IS">IS Code</option>
+                        <option value="ACI">ACI Code</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="output-section">
+                <h3>Design Results</h3>
+                <div class="results" id="results">
+                    <div class="result-item">
+                        <div class="result-title">Status</div>
+                        <div class="result-value" id="status">Enter values to calculate</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-title">Required Steel Area</div>
+                        <div class="result-value" id="steelArea">-</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-title">Reinforcement Details</div>
+                        <div class="result-value" id="reinforcement">-</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-title">Tie Details</div>
+                        <div class="result-value" id="tieDetails">-</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-title">Interaction Ratio</div>
+                        <div class="result-value" id="interactionRatio">-</div>
+                    </div>
+                </div>
+                
+                <div class="visualization">
+                    <h3>Column Cross-Section</h3>
+                    <div class="column-diagram" id="columnDiagram">
+                        <!-- Reinforcement bars will be added here dynamically -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="code-section">
+            <h3>Design Calculations</h3>
+            <div class="code-tabs">
+                <div class="code-tab active" onclick="showCode('isCode')">IS Code</div>
+                <div class="code-tab" onclick="showCode('aciCode')">ACI Code</div>
+            </div>
+            <div class="code-content active" id="isCode">
+                // Calculations will appear here based on input
+            </div>
+            <div class="code-content" id="aciCode">
+                // Calculations will appear here based on input
+            </div>
+        </div>
     </div>
 
-    <div class="input-group">
-      <label>Axial Load (kN)</label>
-      <input type="number" id="axialLoad" value="850">
-    </div>
+    <script>
+        // Get all input elements
+        const inputs = document.querySelectorAll('input, select');
+        
+        // Add event listeners to all inputs for real-time calculation
+        inputs.forEach(input => {
+            input.addEventListener('input', calculateDesign);
+        });
+        
+        // Initial calculation
+        calculateDesign();
+        
+        function calculateDesign() {
+            // Get input values
+            const width = parseFloat(document.getElementById('width').value);
+            const depth = parseFloat(document.getElementById('depth').value);
+            const axialLoad = parseFloat(document.getElementById('axialLoad').value);
+            const momentX = parseFloat(document.getElementById('momentX').value);
+            const momentY = parseFloat(document.getElementById('momentY').value);
+            const fck = parseFloat(document.getElementById('concreteGrade').value);
+            const fy = parseFloat(document.getElementById('steelGrade').value);
+            const designCode = document.getElementById('designCode').value;
+            
+            // Calculate column design based on selected code
+            if (designCode === 'IS') {
+                designAsPerISCode(width, depth, axialLoad, momentX, momentY, fck, fy);
+            } else {
+                designAsPerACICode(width, depth, axialLoad, momentX, momentY, fck, fy);
+            }
+            
+            // Update visualization
+            updateVisualization(width, depth);
+        }
+        
+        function designAsPerISCode(width, depth, Pu, Mux, Muy, fck, fy) {
+            // Convert units
+            Pu = Pu * 1000; // kN to N
+            Mux = Mux * 1e6; // kN·m to N·mm
+            Muy = Muy * 1e6; // kN·m to N·mm
+            
+            // Column dimensions
+            const b = width;
+            const D = depth;
+            const Ag = b * D;
+            
+            // Material properties
+            const γm_conc = 1.5; // Partial safety factor for concrete
+            const γm_steel = 1.15; // Partial safety factor for steel
+            const fcd = 0.67 * fck / γm_conc;
+            const fyd = fy / γm_steel;
+            
+            // Assume 2% steel initially
+            const p = 0.02;
+            const Ast = p * Ag;
+            
+            // Calculate Puz (Clause 39.6, IS 456:2000)
+            const Puz = (0.45 * fck * (Ag - Ast)) + (0.75 * fy * Ast);
+            
+            // Calculate αn (Clause 39.6)
+            const ratio = Pu / Puz;
+            const αn = ratio <= 0.2 ? 1.0 : 0.2 + (ratio <= 0.8 ? ratio : 0.8);
+            
+            // Calculate moment capacities (simplified approach)
+            // This would normally require detailed interaction diagrams
+            // For demo purposes, we'll use simplified calculations
+            const d_prime = 40; // Effective cover
+            const d = D - d_prime;
+            
+            // Simplified Mux1 calculation (for symmetric reinforcement)
+            const Mux1 = 0.36 * fck * b * d * d * (1 - (0.42 * (0.48 * d) / d) + 
+                         0.87 * fy * Ast * 0.5 * (d - d_prime);
+            
+            // For square column, Muy1 = Mux1
+            const Muy1 = Mux1;
+            
+            // Check interaction equation (Clause 39.6)
+            const interactionRatio = Math.pow(Mux/Mux1, αn) + Math.pow(Muy/Muy1, αn);
+            
+            // Determine status
+            let status = interactionRatio <= 1.0 ? "Design is SAFE" : "Design FAILS - Increase section or reinforcement";
+            
+            // Calculate required reinforcement (simplified)
+            let requiredAst = Ast;
+            if (interactionRatio > 1.0) {
+                // Increase reinforcement by the ratio needed
+                requiredAst = Ast * interactionRatio;
+            }
+            
+            // Determine bar configuration
+            const barDia = 20; // mm
+            const barArea = Math.PI * barDia * barDia / 4;
+            const numBars = Math.ceil(requiredAst / barArea);
+            
+            // Tie details
+            const tieDia = Math.max(6, barDia/4);
+            const tieSpacing = Math.min(16 * barDia, 48 * tieDia, b);
+            
+            // Update results
+            document.getElementById('status').textContent = status;
+            document.getElementById('steelArea').textContent = `${requiredAst.toFixed(0)} mm² (${(requiredAst/Ag*100).toFixed(1)}%)`;
+            document.getElementById('reinforcement').textContent = `${numBars} bars of ${barDia} mm diameter`;
+            document.getElementById('tieDetails').textContent = `${tieDia} mm ties @ ${tieSpacing} mm c/c`;
+            document.getElementById('interactionRatio').textContent = interactionRatio.toFixed(3);
+            
+            // Update calculation display
+            document.getElementById('isCode').textContent = 
+`// IS 456:2000 Column Design Calculations
 
-    <div class="input-group">
-      <label>Moment Mx (kNm)</label>
-      <input type="number" id="momentMx" value="15">
-    </div>
+Input Parameters:
+- Column Size: ${b} × ${D} mm
+- Axial Load (Pu): ${Pu/1000} kN
+- Moments (Mux, Muy): ${Mux/1e6}, ${Muy/1e6} kN·m
+- Materials: M${fck} concrete, Fe ${fy} steel
 
-    <div class="input-group">
-      <label>Moment My (kNm)</label>
-      <input type="number" id="momentMy" value="32">
-    </div>
+Calculations:
+1. Gross Area (Ag) = ${b} × ${D} = ${Ag} mm²
+2. Assuming ${p*100}% steel → Ast = ${Ast.toFixed(0)} mm²
+3. Puz = 0.45×fck×(Ag-Ast) + 0.75×fy×Ast
+   = 0.45×${fck}×${Ag-Ast} + 0.75×${fy}×${Ast}
+   = ${Puz.toFixed(0)} N (${(Puz/1000).toFixed(1)} kN)
+4. Pu/Puz = ${ratio.toFixed(3)} → αn = ${αn.toFixed(3)}
+5. Mux1 = ${(Mux1/1e6).toFixed(1)} kN·m (simplified calc)
+6. Interaction Check:
+   (${Mux/1e6}/${Mux1/1e6})^${αn.toFixed(3)} + (${Muy/1e6}/${Muy1/1e6})^${αn.toFixed(3)}
+   = ${interactionRatio.toFixed(3)} ${interactionRatio <= 1.0 ? "≤ 1.0 → SAFE" : "> 1.0 → UNSAFE"}
 
-    <div class="input-group">
-      <label>Concrete Grade (fck in MPa)</label>
-      <input type="number" id="fck" value="25">
-    </div>
+Design Result:
+- Required Steel: ${requiredAst.toFixed(0)} mm²
+- Reinforcement: ${numBars} nos. ${barDia} mm dia bars
+- Ties: ${tieDia} mm @ ${tieSpacing} mm c/c`;
+        }
+        
+        function designAsPerACICode(width, depth, Pu, Mux, Muy, fck, fy) {
+            // Convert units
+            Pu = Pu * 1000; // kN to N
+            Mux = Mux * 1e6; // kN·m to N·mm
+            Muy = Muy * 1e6; // kN·m to N·mm
+            
+            // Column dimensions
+            const b = width;
+            const D = depth;
+            const Ag = b * D;
+            
+            // Material properties (ACI uses psi, but we'll keep MPa for demo)
+            const fpc = 0.85 * fck; // ACI equivalent concrete strength
+            const ϕ = 0.65; // Strength reduction factor for tied columns
+            
+            // Assume 2% steel initially
+            const p = 0.02;
+            const Ast = p * Ag;
+            
+            // Calculate nominal axial strength at zero eccentricity (ACI 318-19 22.4.2)
+            const Po = (0.85 * fpc * (Ag - Ast)) + (fy * Ast);
+            
+            // Maximum design axial strength (ACI 318-19 22.4.2.1)
+            const ϕPn_max = 0.80 * ϕ * Po;
+            
+            // Simplified biaxial bending check (Bresler's method)
+            // For demo, we'll use a simplified interaction ratio
+            // In practice, you'd use interaction diagrams or more complex calculations
+            const Mnx = 0.1 * Ag * D * fpc; // Simplified nominal moment capacity x
+            const Mny = 0.1 * Ag * b * fpc; // Simplified nominal moment capacity y
+            
+            // Interaction equation (simplified)
+            const interactionRatio = Math.pow(Mux/(ϕ*Mnx), 1.5) + Math.pow(Muy/(ϕ*Mny), 1.5);
+            
+            // Determine status
+            let status = interactionRatio <= 1.0 ? "Design is SAFE" : "Design FAILS - Increase section or reinforcement";
+            
+            // Calculate required reinforcement (simplified)
+            let requiredAst = Ast;
+            if (interactionRatio > 1.0) {
+                // Increase reinforcement by the ratio needed
+                requiredAst = Ast * interactionRatio;
+            }
+            
+            // Determine bar configuration
+            const barDia = 20; // mm
+            const barArea = Math.PI * barDia * barDia / 4;
+            const numBars = Math.ceil(requiredAst / barArea);
+            
+            // Tie details (ACI 318-19 25.7.2)
+            const tieDia = Math.max(10, barDia/4);
+            const tieSpacing = Math.min(16 * barDia, 48 * tieDia, b);
+            
+            // Update results
+            document.getElementById('status').textContent = status;
+            document.getElementById('steelArea').textContent = `${requiredAst.toFixed(0)} mm² (${(requiredAst/Ag*100).toFixed(1)}%)`;
+            document.getElementById('reinforcement').textContent = `${numBars} bars of ${barDia} mm diameter`;
+            document.getElementById('tieDetails').textContent = `${tieDia} mm ties @ ${tieSpacing} mm c/c`;
+            document.getElementById('interactionRatio').textContent = interactionRatio.toFixed(3);
+            
+            // Update calculation display
+            document.getElementById('aciCode').textContent = 
+`// ACI 318-19 Column Design Calculations
 
-    <div class="input-group">
-      <label>Steel Grade (fy in MPa)</label>
-      <input type="number" id="fy" value="500">
-    </div>
-  </div>
+Input Parameters:
+- Column Size: ${b} × ${D} mm
+- Axial Load (Pu): ${Pu/1000} kN
+- Moments (Mux, Muy): ${Mux/1e6}, ${Muy/1e6} kN·m
+- Materials: ${fck} MPa concrete, ${fy} MPa steel
 
-  <div class="output-section">
-    <h2>Results</h2>
-    <div id="resultContainer" class="result"></div>
-  </div>
+Calculations:
+1. Gross Area (Ag) = ${b} × ${D} = ${Ag} mm²
+2. Assuming ${p*100}% steel → Ast = ${Ast.toFixed(0)} mm²
+3. Nominal Axial Strength (Po) = 0.85×f'c×(Ag-Ast) + fy×Ast
+   = 0.85×${fpc}×${Ag-Ast} + ${fy}×${Ast}
+   = ${Po.toFixed(0)} N (${(Po/1000).toFixed(1)} kN)
+4. Maximum Design Axial Strength (ϕPn_max) = 0.80×ϕ×Po
+   = 0.80×${ϕ}×${Po} = ${ϕPn_max.toFixed(0)} N (${(ϕPn_max/1000).toFixed(1)} kN)
+5. Simplified Moment Capacities:
+   - Mnx ≈ ${(Mnx/1e6).toFixed(1)} kN·m
+   - Mny ≈ ${(Mny/1e6).toFixed(1)} kN·m
+6. Biaxial Interaction Check (Bresler's method):
+   (${Mux/1e6}/(${ϕ}×${Mnx/1e6}))^1.5 + (${Muy/1e6}/(${ϕ}×${Mny/1e6}))^1.5
+   = ${interactionRatio.toFixed(3)} ${interactionRatio <= 1.0 ? "≤ 1.0 → SAFE" : "> 1.0 → UNSAFE"}
 
-</section>
-
+Design Result:
+- Required Steel: ${requiredAst.toFixed(0)} mm²
+- Reinforcement: ${numBars} nos. ${barDia} mm dia bars
+- Ties: ${tieDia} mm @ ${tieSpacing} mm c/c`;
+        }
+        
+        function updateVisualization(width, depth) {
+            const diagram = document.getElementById('columnDiagram');
+            diagram.style.width = `${width}px`;
+            diagram.style.height = `${depth}px`;
+            
+            // Clear existing reinforcement
+            diagram.innerHTML = '';
+            
+            // Add reinforcement bars (simplified - 4 corners for demo)
+            const barPositions = [
+                { x: 0.15, y: 0.15 },
+                { x: 0.85, y: 0.15 },
+                { x: 0.15, y: 0.85 },
+                { x: 0.85, y: 0.85 }
+            ];
+            
+            barPositions.forEach(pos => {
+                const bar = document.createElement('div');
+                bar.className = 'reinforcement';
+                bar.style.left = `${pos.x * 100}%`;
+                bar.style.top = `${pos.y * 100}%`;
+                diagram.appendChild(bar);
+            });
+            
+            // Add ties (simplified - one in the middle for demo)
+            const tie = document.createElement('div');
+            tie.className = 'ties';
+            tie.style.width = `${width * 0.7}px`;
+            tie.style.height = `${depth * 0.7}px`;
+            tie.style.left = `${width * 0.15}px`;
+            tie.style.top = `${depth * 0.15}px`;
+            diagram.appendChild(tie);
+        }
+        
+        function showCode(codeId) {
+            // Hide all code content
+            document.querySelectorAll('.code-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Deactivate all tabs
+            document.querySelectorAll('.code-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Activate selected tab and content
+            document.getElementById(codeId).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+    </script>
 </body>
 </html>
