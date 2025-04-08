@@ -1,35 +1,39 @@
-document.addEventListener('input', calculate);
+document.addEventListener('DOMContentLoaded', () => {
 
-function calculate() {
-  const size = parseFloat(document.getElementById('size').value);
-  const axialLoad = parseFloat(document.getElementById('axialLoad').value);
-  const momentX = parseFloat(document.getElementById('momentX').value);
-  const momentY = parseFloat(document.getElementById('momentY').value);
-  const fck = parseFloat(document.getElementById('fck').value);
-  const fy = parseFloat(document.getElementById('fy').value);
+  const colSize = document.getElementById('colSize');
+  const axialLoad = document.getElementById('axialLoad');
+  const momentX = document.getElementById('momentX');
+  const momentY = document.getElementById('momentY');
+  const fck = document.getElementById('fck');
+  const fy = document.getElementById('fy');
 
-  const Ag = size * size; // Gross area mm^2
-  const Pu = axialLoad * 1000; // Convert kN to N
-  const Mu = Math.sqrt(momentX * momentX + momentY * momentY) * 1e6; // Convert kNm to Nmm
+  const eValue = document.getElementById('eValue');
+  const puRatio = document.getElementById('puRatio');
+  const designStatus = document.getElementById('designStatus');
 
-  const e = Mu / Pu; // Eccentricity
+  function calculateDesign() {
+    const colArea = parseFloat(colSize.value) * parseFloat(colSize.value) / 1000000; // m2
+    const E = 5000 * Math.sqrt(parseFloat(fck.value));
+    const pu = parseFloat(axialLoad.value);
 
-  const Ec = 5000 * Math.sqrt(fck) * 1e6; // Young's Modulus in N/m2
+    const puByFckAc = pu / (parseFloat(fck.value) * colArea * 1000); // converting m2 to mm2
 
-  const output = `
-    <strong>Design Calculations:</strong><br>
-    Gross Area Ag = ${Ag} mm² <br>
-    Design Axial Load (Pu) = ${Pu} N<br>
-    Equivalent Moment (Mu) = ${Mu} Nmm<br>
-    Eccentricity (e) = ${e.toFixed(2)} mm<br>
-    Young's Modulus (Ec) = ${Ec.toFixed(2)} N/m²<br>
-    <br>
-    <strong>IS 456:2000 Check:</strong><br>
-    Column is SAFE for provided load and moment.<br>
-    <br>
-    <strong>ACI 318 Check:</strong><br>
-    Column is SAFE based on strength reduction factors.
-  `;
+    eValue.innerHTML = E.toFixed(2);
+    puRatio.innerHTML = puByFckAc.toFixed(3);
 
-  document.getElementById('output').innerHTML = output;
-}
+    if(puByFckAc <= 0.4){
+      designStatus.innerHTML = 'Safe';
+      designStatus.style.color = '#00FFAB';
+    } else {
+      designStatus.innerHTML = 'Unsafe';
+      designStatus.style.color = 'red';
+    }
+  }
+
+  [colSize, axialLoad, momentX, momentY, fck, fy].forEach(input => {
+    input.addEventListener('input', calculateDesign);
+  });
+
+  calculateDesign();
+
+});
